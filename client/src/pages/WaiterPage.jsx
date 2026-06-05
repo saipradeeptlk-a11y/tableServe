@@ -1,11 +1,12 @@
 import React from 'react'
 import axios from 'axios'
+import socket from '../socket'
 
 export default function WaiterPage() {
 
   
   const [tableNumber, setTableNumber] = React.useState('')
-  const [selectedCourse, setSelectedCourse] = React.useState('starter')
+  const [selectedCourse, setSelectedCourse] = React.useState('Starter')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [menuItems, setMenuItems] = React.useState([])
   const [searchResults, setSearchResults] = React.useState([])
@@ -13,24 +14,40 @@ export default function WaiterPage() {
   const [error, setError] = React.useState('')
   const [success, setSuccess] = React.useState('')
   const [tableOrder,setTableOrder]= React.useState([])
+  const [activeTable, setActiveTable] = React.useState('')
+  const activeTableRef = React.useRef('')
+  const [notifications, setNotifications] = React.useState([])
 
   // hint 1 — fetch menu from backend when page loads
   // useEffect goes here
-  React.useEffect(()=>{
-    const fetchMenu = async () => {
-      try{
-        const token = localStorage.getItem('token')
-        const response = await axios.get('http://localhost:5000/api/menu', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        setMenuItems(response.data.items)
-
-      }catch(err){
-        setError('Failed to load menu')
-      }
+  React.useEffect(() => {
+  const fetchMenu = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.get('http://localhost:5000/api/menu', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setMenuItems(response.data.items)
+    } catch (err) {
+      setError('Failed to load menu')
     }
-    fetchMenu()
-  },[])
+  }
+  fetchMenu()
+
+  socket.on('orderUpdated', () => {
+    console.log("orderUpdated received!")
+    getMyorders()
+  })
+  socket.on('courseReady', (data) => {
+  console.log("courseReady received!", data)
+  setNotifications(prev => [...prev, `Table ${data.tableNumber} — ${data.course}s are ready! 🍽️`])
+  })
+
+  return () => {
+    socket.off('orderUpdated')
+    socket.off('courseReady')
+  }
+}, [])
 
   // hint 2 — filter menu when search or course changes
   // useEffect goes here
@@ -76,24 +93,27 @@ export default function WaiterPage() {
   function handleRemoveItem(id) {
     setOrderItems(prev => prev.filter(item => item._id !== id))
   }
-  async function getMyorders() {
-  try {
-    const token = localStorage.getItem('token')
 
+  async function getMyorders() {
+  console.log("activeTableRef:", activeTableRef.current)
+  console.log("tableNumber:", tableNumber)
+
+  try {
+    const tableToFetch = activeTableRef.current || localStorage.getItem('activeTable') || tableNumber
+    console.log("tableToFetch:", tableToFetch)
+    if (!tableToFetch) return
+    const token = localStorage.getItem('token')
     const response = await axios.get(
-      `http://localhost:5000/api/orders/table/${tableNumber}`,
+      `http://localhost:5000/api/orders/table/${tableToFetch}`,
       {
         headers: {
           Authorization: `Bearer ${token}`
         }
       }
     )
-
     setTableOrder(response.data.orders)
-
   } catch (err) {
-    console.log(err.response?.data)
-    setError('Failed to fetch the order for the particular table number')
+    setError('Failed to fetch orders')
   }
 }
 
@@ -118,6 +138,9 @@ export default function WaiterPage() {
          }))
       },{headers:{Authorization:`Bearer ${token}`}})
       setSuccess('Order sent to kitchen!')
+      setActiveTable(tableNumber)
+      activeTableRef.current = tableNumber
+      localStorage.setItem('activeTable', tableNumber)
       setOrderItems([])
       setTableNumber('')
       setError('')
@@ -171,7 +194,13 @@ export default function WaiterPage() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {success && <p style={{ color: 'green' }}>{success}</p>}
-
+      
+      {notifications.map((note, index) => (
+      <div key={index} style={{backgroundColor:'green', color:'white', padding:'10px', marginBottom:'5px'}}>
+        {note}
+        <button onClick={() => setNotifications(prev => prev.filter((_, i) => i !== index))}>✕</button>
+      </div>
+    ))}
       {/* radio buttons — starter / main / dessert */}
       <div>
         <label>
@@ -305,7 +334,7 @@ export default function WaiterPage() {
                 marginBottom: '10px'
               }}
             > 
-              {order.overallStatus === "pending" && <button onClick={() => handleCloseOrder(order._id)}>X</button>}
+              {order.overallStatus === "ongoing" && <button onClick={() => handleCloseOrder(order._id)}>X</button>}
               <p>
                 Order Status: {order.overallStatus}
               </p>

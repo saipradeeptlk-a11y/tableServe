@@ -15,7 +15,7 @@ const createOrder = async (req, res) => {
   
     const existingOrder = await Order.findOne({ 
       tableNumber, 
-      overallStatus: { $in: ['pending', 'preparing'] } 
+      overallStatus: 'ongoing'
     })
 
     if (existingOrder) {
@@ -27,16 +27,18 @@ const createOrder = async (req, res) => {
 
     
     const order = await Order.create({ tableNumber, items })
+    req.io.emit('newOrder',order)
     return res.status(201).json({ message: "Order created successfully", order })
 
   } catch (error) {
+    console.log("createOrder error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
 
 const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find().populate('items.menuItem')
+    const orders = await Order.find({overallStatus: 'ongoing'}).populate('items.menuItem')
     return res.status(200).json({ orders })
   } catch (error) {
     return res.status(500).json({ message: "Internal server error" })
@@ -51,9 +53,18 @@ const updateOrderStatus = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" })
     }
-    order.overallStatus = status  // ✅ correct field name
-    await order.save()
-    return res.status(200).json({ message: "Order status updated successfully" })
+      
+    const allStatuses = order.items.map(i => i.status)
+    if(allStatuses.every(s => s === 'done')){
+       order.overallStatus = status
+       await order.save()
+       req.io.emit('orderClosed', order)
+       return res.status(200).json({ message: "Order status updated successfully" })
+    }else{
+      return res.status(400).json({error:"error"})
+    }
+    
+    
   } catch (error) {
     return res.status(500).json({ message: "Internal server error" })
   }
@@ -66,7 +77,7 @@ const getOrdersByTableNumber = async (req, res) => {
       return res.status(400).json({ message: "Table number must be a number" })
     }
     const orders = await Order.find({ tableNumber,overallStatus:{
-      $in :['pending','preparing']
+      $in :['ongoing']
     } }).populate('items.menuItem') 
     return res.status(200).json({ orders })
   } catch (error) {
@@ -95,18 +106,36 @@ const updateItemStatus = async (req,res) => {
     }
 
     item.status = status
+    await order.save()
+    await   order.populate('items.menuItem')
+    console.log("all items:", order.items.map(i => ({ course: i.menuItem.course, status: i.status })))
+    const allStarters = order.items.filter(i => i.menuItem.course === "Starter")
+    const allMains = order.items.filter(i => i.menuItem.course === "Main")
+    const allDesserts = order.items.filter(i=> i.menuItem.course === "Dessert")
+    console.log("starters:", allStarters.length)
+    console.log("mains:", allMains.length)
+    console.log("desserts:", allDesserts.length)
 
-    // Auto-update overallStatus based on all items
-    const allStatuses = order.items.map(i => i.status)
-    if (allStatuses.every(s => s === 'done')) {
-      order.overallStatus = 'done'
-    } else if (allStatuses.some(s => s === 'preparing' || s === 'done')) {
-      order.overallStatus = 'preparing'
-    } else {
-      order.overallStatus = 'pending'
+    console.log("mains all done?", allMains.every(s => s.status === "done"))
+    console.log("req.io exists?", !!req.io)
+    if(allStarters.length > 0 && allStarters.every(s => s.status === "done")){
+        req.io.emit('courseReady', { tableNumber: order.tableNumber, course: "Starter" })
+    }
+    if(allMains.length > 0 && allMains.every(s => s.status === "done")){
+      console.log("emitting courseReady for mains!") 
+      req.io.emit('courseReady', { tableNumber: order.tableNumber, course: "Main" })
+    }
+    if(allDesserts.length > 0 && allDesserts.every(s => s.status === "done")){
+      req.io.emit('courseReady', { tableNumber: order.tableNumber, course: "Dessert" })
     }
 
+
+
+    // Auto-update overallStatus based on all items
+    
+
     await order.save()
+    req.io.emit('orderUpdated',order)
     return res.status(200).json({ message: "Item status updated", order })
 
   } catch (error) {

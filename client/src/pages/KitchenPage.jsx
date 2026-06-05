@@ -1,9 +1,29 @@
 import React from "react"
 import axios from 'axios'
+import socket from '../socket'
 export default function KitchenPage(){
  const [orderlist,setOrderList] = React.useState([])
  const [error, setError] = React.useState('')
  
+
+React.useEffect(() => {
+  fetchOrders()
+
+  socket.on('newOrder', () => {
+    fetchOrders()
+  })
+
+  socket.on('orderUpdated', () => {
+    fetchOrders()
+  })
+
+  return () => {
+    socket.off('newOrder')
+    socket.off('orderUpdated')
+    socket.off('orderClosed')
+  }
+}, [])
+
  async function fetchOrders(){
     try{
         const token = localStorage.getItem('token')

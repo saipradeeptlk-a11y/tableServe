@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const { Server } = require('socket.io');
 
 const app = express();
 const mongoose = require('mongoose') 
@@ -8,10 +9,33 @@ const authRoutes = require('./routes/auth')
 const menuRoutes = require('./routes/menu')
 const orderRoutes = require('./routes/order')
 
+const http = require('http')
 
 app.use(express.json());
 app.use(cors());
 const PORT = process.env.PORT || 5000;
+
+const server = http.createServer(app)
+
+const io = new Server(server,{cors:{origin:'http://localhost:3000'}})
+
+io.on('connection',(socket)=>{
+    socket.on('join-room',(room)=>{
+        socket.join(room)
+    })
+    socket.on('disconnect', () => {
+    console.log('disconnected')
+  })
+})
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`)
+})
+
+app.use('/api/orders', (req, res, next) => {
+  req.io = io
+  next()
+}, orderRoutes)
 
 mongoose.connect(process.env.MONGO_URI).then(()=> console.log('Connected to MongoDB')).catch((err)=>console.log('Connection failed',err));
 app.get("/",(req,res)=>{
@@ -19,9 +43,7 @@ app.get("/",(req,res)=>{
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
-app.use('/api/orders', orderRoutes);
-app.listen(PORT,()=>{
-    console.log(`Server is running on port ${PORT}`);
-});
+
+
 
 
