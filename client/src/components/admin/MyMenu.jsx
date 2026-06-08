@@ -5,6 +5,9 @@ import axios from 'axios'
 export default function MyMenu() {
     const [menuItems, setMenuItems] = React.useState([])
     const [error, setError] = React.useState('')
+    const [starters, setStarters] = React.useState([])
+    const [main, setMain] = React.useState([])
+    const [dessert, setDessert] = React.useState([])
 
     const [name, setName] = React.useState('')
     const [price, setPrice] = React.useState('')
@@ -28,9 +31,29 @@ export default function MyMenu() {
         }
 
     }
+
+    function getStarters() {
+        const starters = menuItems.filter(item => item.course === "Starter")
+        setStarters(starters)
+    }
+    function getMains() {
+        const main = menuItems.filter(item => item.course === "Main")
+        setMain(main)
+    }
+    function getDesserts() {
+        const D = menuItems.filter(item => item.course === "Dessert")
+        setDessert(D)
+    }
+
     React.useEffect(() => {
         fetchMenu()
     }, [])
+
+    React.useEffect(() => {
+        getStarters()
+        getMains()
+        getDesserts()
+    }, [menuItems])
 
     async function handleAddItem() {
         try {
@@ -109,8 +132,31 @@ export default function MyMenu() {
                 <button onClick={handleAddItem}>Add Item</button>
             </form >
             <h1>MyMenu</h1>
+            <h2>Starters</h2>
             {
-                menuItems.map(item => (
+                starters.map(item => (
+                    <div key={item._id}>
+                        <p>Name : {item.name}</p>
+                        <p>Price : {item.price}</p>
+                        <p>Course : {item.course}</p>
+                        <button onClick={() => { handleDeleteItem(item._id) }}>Delete</button>
+                    </div>
+                ))
+            }
+            <h2>Mains</h2>
+            {
+                main.map(item => (
+                    <div key={item._id}>
+                        <p>Name : {item.name}</p>
+                        <p>Price : {item.price}</p>
+                        <p>Course : {item.course}</p>
+                        <button onClick={() => { handleDeleteItem(item._id) }}>Delete</button>
+                    </div>
+                ))
+            }
+            <h2>Desserts</h2>
+            {
+                dessert.map(item => (
                     <div key={item._id}>
                         <p>Name : {item.name}</p>
                         <p>Price : {item.price}</p>
