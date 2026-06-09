@@ -4,7 +4,7 @@ import socket from '../socket'
 
 export default function WaiterPage() {
 
-  
+
   const [tableNumber, setTableNumber] = React.useState('')
   const [selectedCourse, setSelectedCourse] = React.useState('Starter')
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -13,79 +13,95 @@ export default function WaiterPage() {
   const [orderItems, setOrderItems] = React.useState([])
   const [error, setError] = React.useState('')
   const [success, setSuccess] = React.useState('')
-  const [tableOrder,setTableOrder]= React.useState([])
+  const [tableOrder, setTableOrder] = React.useState([])
   const [activeTable, setActiveTable] = React.useState('')
   const activeTableRef = React.useRef('')
   const [notifications, setNotifications] = React.useState([])
+  const [availableTables, setAvailableTables] = React.useState([])
 
   // hint 1 — fetch menu from backend when page loads
   // useEffect goes here
   React.useEffect(() => {
-  const fetchMenu = async () => {
-    try {
-      const token = localStorage.getItem('token')
-      const response = await axios.get('http://localhost:5000/api/menu', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      setMenuItems(response.data.items)
-    } catch (err) {
-      setError('Failed to load menu')
+    const fetchMenu = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get('http://localhost:5000/api/menu', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        setMenuItems(response.data.items)
+      } catch (err) {
+        setError('Failed to load menu')
+      }
     }
-  }
-  fetchMenu()
+    fetchMenu()
 
-  socket.on('orderUpdated', () => {
-    console.log("orderUpdated received!")
-    getMyorders()
-  })
-  socket.on('courseReady', (data) => {
-  console.log("courseReady received!", data)
-  setNotifications(prev => [...prev, `Table ${data.tableNumber} — ${data.course}s are ready! 🍽️`])
-  })
+    socket.on('orderUpdated', () => {
+      console.log("orderUpdated received!")
+      getMyorders()
+    })
+    socket.on('courseReady', (data) => {
+      console.log("courseReady received!", data)
+      setNotifications(prev => [...prev, `Table ${data.tableNumber} — ${data.course}s are ready! 🍽️`])
+    })
 
-  return () => {
-    socket.off('orderUpdated')
-    socket.off('courseReady')
-  }
-}, [])
+    return () => {
+      socket.off('orderUpdated')
+      socket.off('courseReady')
+    }
+  }, [])
 
+  React.useEffect(() => {
+    async function fetchAvailableTables() {
+      try {
+        const token = localStorage.getItem('token')
+        const response = await axios.get('http://localhost:5000/api/table', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        const available = response.data.t.filter(t => t.Status === 'available')
+        setAvailableTables(available)
+      } catch {
+        setError('Failed to load tables')
+      }
+    }
+    fetchAvailableTables()
+  }, [])
   // hint 2 — filter menu when search or course changes
   // useEffect goes here
-  React.useEffect(()=>{
-    if(!searchQuery){
+  React.useEffect(() => {
+    if (!searchQuery) {
       setSearchResults([])
       return
     }
     const filtered = menuItems.filter(item => item.course === selectedCourse && item.name.toLowerCase().includes(searchQuery.toLowerCase()))
     setSearchResults(filtered)
-  },[searchQuery,selectedCourse,menuItems])
+  }, [searchQuery, selectedCourse, menuItems])
 
   // hint 3 — add item to order
-  function handleAddItem(item) { 
+  function handleAddItem(item) {
     const alreadyAdded = orderItems.find(i => i._id === item._id)
     if (alreadyAdded) {
       setError('Item already added!')
       return
     }
     setOrderItems(
-      prev =>[
-        ...prev,{...item,quantity:1}]
-      
+      prev => [
+        ...prev, { ...item, quantity: 1 }]
+
     )
     setSearchQuery('')
     setSearchResults([])
   }
-  function handleIncreaseQuantity(id){
-    
-    
+  function handleIncreaseQuantity(id) {
+
+
     setOrderItems(
-      prev => prev.map(i => i._id === id ? {...i,quantity:i.quantity+1 }: i)
+      prev => prev.map(i => i._id === id ? { ...i, quantity: i.quantity + 1 } : i)
     )
 
   }
-  function handleDecreaseQuantity(id){
+  function handleDecreaseQuantity(id) {
     setOrderItems(
-      prev => prev.map(i => i._id === id ? i.quantity ===1 ? i :{...i,quantity:i.quantity-1 }: i)
+      prev => prev.map(i => i._id === id ? i.quantity === 1 ? i : { ...i, quantity: i.quantity - 1 } : i)
     )
   }
 
@@ -95,48 +111,48 @@ export default function WaiterPage() {
   }
 
   async function getMyorders() {
-  console.log("activeTableRef:", activeTableRef.current)
-  console.log("tableNumber:", tableNumber)
+    console.log("activeTableRef:", activeTableRef.current)
+    console.log("tableNumber:", tableNumber)
 
-  try {
-    const tableToFetch = activeTableRef.current || localStorage.getItem('activeTable') || tableNumber
-    console.log("tableToFetch:", tableToFetch)
-    if (!tableToFetch) return
-    const token = localStorage.getItem('token')
-    const response = await axios.get(
-      `http://localhost:5000/api/orders/table/${tableToFetch}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+    try {
+      const tableToFetch = activeTableRef.current || localStorage.getItem('activeTable') || tableNumber
+      console.log("tableToFetch:", tableToFetch)
+      if (!tableToFetch) return
+      const token = localStorage.getItem('token')
+      const response = await axios.get(
+        `http://localhost:5000/api/orders/table/${tableToFetch}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    )
-    setTableOrder(response.data.orders)
-  } catch (err) {
-    setError('Failed to fetch orders')
+      )
+      setTableOrder(response.data.orders)
+    } catch (err) {
+      setError('Failed to fetch orders')
+    }
   }
-}
 
   // hint 5 — send order to kitchen
   async function handleSendOrder() {
-    if(!tableNumber){
+    if (!tableNumber) {
       setError('Please enter a table number')
-      return 
+      return
     }
-    if(orderItems.length === 0){
+    if (orderItems.length === 0) {
       setError('Please add at least one item! ')
       return
     }
-    try{
+    try {
       const token = localStorage.getItem('token')
-      const response = await axios.post('http://localhost:5000/api/orders',{
-         tableNumber:Number(tableNumber),
-         items:orderItems.map(item => ({
-              menuItem: item._id,
-              quantity: item.quantity || 1,
-              status:'pending'
-         }))
-      },{headers:{Authorization:`Bearer ${token}`}})
+      const response = await axios.post('http://localhost:5000/api/orders', {
+        tableNumber: Number(tableNumber),
+        items: orderItems.map(item => ({
+          menuItem: item._id,
+          quantity: item.quantity || 1,
+          status: 'pending'
+        }))
+      }, { headers: { Authorization: `Bearer ${token}` } })
       setSuccess('Order sent to kitchen!')
       setActiveTable(tableNumber)
       activeTableRef.current = tableNumber
@@ -147,28 +163,28 @@ export default function WaiterPage() {
     } catch (err) {
       setError('Failed to send order')
     }
-    
-    
-  
+
+
+
 
   }
   async function handleCloseOrder(orderId) {
-  try {
-    const token = localStorage.getItem('token')
-    await axios.put(`http://localhost:5000/api/orders/${orderId}/status`,
-      { status: 'done' },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
+    try {
+      const token = localStorage.getItem('token')
+      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`,
+        { status: 'done' },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         }
-      }
-    )
-    getMyorders()
+      )
+      getMyorders()
 
-  } catch (error) {
-    setError(error.response?.data?.message || "Unable to close order")
+    } catch (error) {
+      setError(error.response?.data?.message || "Unable to close order")
+    }
   }
-}
 
   // split orderItems into 3 groups
   const starters = orderItems.filter(i => i.course === 'Starter')
@@ -181,12 +197,17 @@ export default function WaiterPage() {
       {/* header + table number input */}
       <header>
         <h1>TableServe — Waiter</h1>
-        <input
-          type="number"
-          placeholder="Enter Table Number"
+        <select
           value={tableNumber}
           onChange={(e) => setTableNumber(e.target.value)}
-        />
+        >
+          <option value="">Select a table</option>
+          {availableTables.map(table => (
+            <option key={table._id} value={table.TableNumber}>
+              Table {table.TableNumber}
+            </option>
+          ))}
+        </select>
         <button onClick={getMyorders}>
           Get Active Orders
         </button>
@@ -194,13 +215,13 @@ export default function WaiterPage() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {success && <p style={{ color: 'green' }}>{success}</p>}
-      
+
       {notifications.map((note, index) => (
-      <div key={index} style={{backgroundColor:'green', color:'white', padding:'10px', marginBottom:'5px'}}>
-        {note}
-        <button onClick={() => setNotifications(prev => prev.filter((_, i) => i !== index))}>✕</button>
-      </div>
-    ))}
+        <div key={index} style={{ backgroundColor: 'green', color: 'white', padding: '10px', marginBottom: '5px' }}>
+          {note}
+          <button onClick={() => setNotifications(prev => prev.filter((_, i) => i !== index))}>✕</button>
+        </div>
+      ))}
       {/* radio buttons — starter / main / dessert */}
       <div>
         <label>
@@ -266,8 +287,8 @@ export default function WaiterPage() {
 
       {/* order display — 3 sections */}
       <div>
-      {/* section 1 — starters */}
-      <div>
+        {/* section 1 — starters */}
+        <div>
           <h3>Starters</h3>
           {starters.length === 0
             ? <p>No starters added</p>
@@ -282,8 +303,8 @@ export default function WaiterPage() {
             ))
           }
         </div>
-      {/* section 2 — mains */}
-       <div>
+        {/* section 2 — mains */}
+        <div>
           <h3>Main Course</h3>
           {mains.length === 0
             ? <p>No mains added</p>
@@ -298,8 +319,8 @@ export default function WaiterPage() {
             ))
           }
         </div>
-      {/* section 3 — desserts */}
-       <div>
+        {/* section 3 — desserts */}
+        <div>
           <h3>Desserts</h3>
           {desserts.length === 0
             ? <p>No desserts added</p>
@@ -314,11 +335,11 @@ export default function WaiterPage() {
             ))
           }
         </div>
-       </div>  
+      </div>
 
       {/* send to kitchen button */}
       <button onClick={handleSendOrder}>Send to Kitchen</button>
-            <div>
+      <div>
         <h2>Active Orders</h2>
 
         {tableOrder.length === 0 ? (
@@ -333,7 +354,7 @@ export default function WaiterPage() {
                 padding: '10px',
                 marginBottom: '10px'
               }}
-            > 
+            >
               {order.overallStatus === "ongoing" && <button onClick={() => handleCloseOrder(order._id)}>X</button>}
               <p>
                 Order Status: {order.overallStatus}

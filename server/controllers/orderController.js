@@ -1,4 +1,5 @@
 const Order = require('../models/Order')
+const Table = require('../models/Table')
 
 const createOrder = async (req, res) => {
   try {
@@ -27,6 +28,10 @@ const createOrder = async (req, res) => {
 
 
     const order = await Order.create({ tableNumber, items })
+    await Table.findOneAndUpdate(
+      { TableNumber: tableNumber },
+      { Status: 'occupied' }
+    )
     req.io.emit('newOrder', order)
     return res.status(201).json({ message: "Order created successfully", order })
 
@@ -68,6 +73,10 @@ const updateOrderStatus = async (req, res) => {
     if (allStatuses.every(s => s === 'done')) {
       order.overallStatus = status
       await order.save()
+      await Table.findOneAndUpdate(
+        { TableNumber: order.tableNumber },
+        { Status: 'available' }
+      )
       req.io.emit('orderClosed', order)
       return res.status(200).json({ message: "Order status updated successfully" })
     } else {

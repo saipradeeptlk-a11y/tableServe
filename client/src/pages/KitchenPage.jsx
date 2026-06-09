@@ -1,73 +1,71 @@
 import React from "react"
 import axios from 'axios'
 import socket from '../socket'
-export default function KitchenPage(){
- const [orderlist,setOrderList] = React.useState([])
- const [error, setError] = React.useState('')
- 
+export default function KitchenPage() {
+    const [orderlist, setOrderList] = React.useState([])
+    const [error, setError] = React.useState('')
 
-React.useEffect(() => {
-  fetchOrders()
 
-  socket.on('newOrder', () => {
-    fetchOrders()
-  })
+    React.useEffect(() => {
+        fetchOrders()
 
-  socket.on('orderUpdated', () => {
-    fetchOrders()
-  })
+        socket.on('newOrder', () => {
+            fetchOrders()
+        })
 
-  return () => {
-    socket.off('newOrder')
-    socket.off('orderUpdated')
-    socket.off('orderClosed')
-  }
-}, [])
+        socket.on('orderUpdated', () => {
+            fetchOrders()
+        })
 
- async function fetchOrders(){
-    try{
-        const token = localStorage.getItem('token')
-        const orders = await axios.get(`http://localhost:5000/api/orders/`,{
-           
-        headers: {
-          Authorization: `Bearer ${token}`
+        return () => {
+            socket.off('newOrder')
+            socket.off('orderUpdated')
+            socket.off('orderClosed')
         }
-      
-        }) 
-        setOrderList(orders.data.orders)          
-        
+    }, [])
 
-    }catch{
-        setError("unable to fetch orders")
-    }
-}
-React.useEffect(() => {
-    fetchOrders()
-}, [])
-
-async function handleItemStatus(props){
-    console.log("Sending:", props)
-
-        try{
+    async function fetchOrders() {
+        try {
             const token = localStorage.getItem('token')
-            const item = await axios.put(`http://localhost:5000/api/orders/${props.orderId}/items/${props.itemId}/status`,{
-                 status:props.status
-            },  {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-      fetchOrders()
+            const orders = await axios.get(`http://localhost:5000/api/orders/`, {
 
-        }catch{
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+
+            })
+            setOrderList(orders.data.orders)
+
+
+        } catch {
+            setError("unable to fetch orders")
+        }
+    }
+
+
+    async function handleItemStatus(props) {
+        console.log("Sending:", props)
+
+        try {
+            const token = localStorage.getItem('token')
+            const item = await axios.put(`http://localhost:5000/api/orders/${props.orderId}/items/${props.itemId}/status`, {
+                status: props.status
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            fetchOrders()
+
+        } catch {
             setError("Unable to update item status")
 
         }
-}
+    }
 
 
 
-    return(
+    return (
         <div>
             <h1>Kitchen Dashboard</h1>
             {error && <p>{error}</p>}
@@ -79,12 +77,12 @@ async function handleItemStatus(props){
 
                     {order.items.map(item => (
                         <div key={item._id}>
-                            <p>item name: {item.menuItem.name}</p>
+                            <p>item name: {item.menuItem?.name || 'Item deleted'}</p>
                             <p>item quantity: {item.quantity}</p>
                             <p>item status: {item.status}</p>
 
-                            {item.status === "pending" &&  <button onClick={()=> handleItemStatus({ orderId: order._id, itemId: item._id, status: "preparing" })}>Preparing</button>}
-                            {item.status === "preparing" && <button onClick={()=> handleItemStatus({ orderId: order._id, itemId: item._id, status: "done" })}>Done</button>}
+                            {item.status === "pending" && <button onClick={() => handleItemStatus({ orderId: order._id, itemId: item._id, status: "preparing" })}>Preparing</button>}
+                            {item.status === "preparing" && <button onClick={() => handleItemStatus({ orderId: order._id, itemId: item._id, status: "done" })}>Done</button>}
                         </div>
                     ))}
 
