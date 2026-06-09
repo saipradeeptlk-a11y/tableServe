@@ -18,7 +18,9 @@ export default function WaiterPage() {
   const activeTableRef = React.useRef('')
   const [notifications, setNotifications] = React.useState([])
   const [availableTables, setAvailableTables] = React.useState([])
-
+  const [aiQuestion, setAiQuestion] = React.useState('')
+  const [aiAnswer, setAiAnswer] = React.useState('')
+  const [aiLoading, setAiLoading] = React.useState(false)
   // hint 1 — fetch menu from backend when page loads
   // useEffect goes here
   React.useEffect(() => {
@@ -49,6 +51,23 @@ export default function WaiterPage() {
       socket.off('courseReady')
     }
   }, [])
+
+  async function handleAskAI() {
+    if (!aiQuestion) return
+    try {
+      setAiLoading(true)
+      const token = localStorage.getItem('token')
+      const response = await axios.post('http://localhost:5000/api/ai/ask',
+        { question: aiQuestion },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      setAiAnswer(response.data.answer)
+    } catch {
+      setError('AI request failed')
+    } finally {
+      setAiLoading(false)
+    }
+  }
 
   React.useEffect(() => {
     async function fetchAvailableTables() {
@@ -375,7 +394,21 @@ export default function WaiterPage() {
           ))
         )}
       </div>
+      <div>
+        <h2>🤖 AI Menu Assistant</h2>
+        <input
+          type="text"
+          placeholder="Ask about the menu..."
+          value={aiQuestion}
+          onChange={(e) => setAiQuestion(e.target.value)}
+        />
+        <button onClick={handleAskAI}>
+          {aiLoading ? 'Thinking...' : 'Ask'}
+        </button>
+        {aiAnswer && <p>{aiAnswer}</p>}
+      </div>
 
     </div>
+
   )
 }

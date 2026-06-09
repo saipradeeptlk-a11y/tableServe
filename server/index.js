@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth')
 const menuRoutes = require('./routes/menu')
 const orderRoutes = require('./routes/order')
 const tableRoutues = require('./routes/Table')
+const aiRoutes = require('./routes/ai')
 
 const http = require('http')
 
@@ -45,6 +46,7 @@ app.get("/", (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/table', tableRoutues);
+app.use('/api/ai', aiRoutes)
 
 
 
