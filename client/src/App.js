@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import WaiterPage from './pages/WaiterPage'
 import KitchenPage from './pages/KitchenPage'
 import AdminPage from './pages/AdminPage'
+import SetupPage from './pages/SetupPages'
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/waiter" element={<WaiterPage />} />
         <Route path="/kitchen" element={<KitchenPage />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/setup" element={<SetupPage />} />
       </Routes>
     </BrowserRouter>
   )

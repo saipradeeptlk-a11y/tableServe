@@ -3,8 +3,6 @@ import axios from 'axios'
 import socket from '../socket'
 
 export default function WaiterPage() {
-
-
   const [tableNumber, setTableNumber] = React.useState('')
   const [selectedCourse, setSelectedCourse] = React.useState('Starter')
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -21,36 +19,130 @@ export default function WaiterPage() {
   const [aiQuestion, setAiQuestion] = React.useState('')
   const [aiAnswer, setAiAnswer] = React.useState('')
   const [aiLoading, setAiLoading] = React.useState(false)
-  // hint 1 — fetch menu from backend when page loads
-  // useEffect goes here
-  React.useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get('http://localhost:5000/api/menu', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        setMenuItems(response.data.items)
-      } catch (err) {
-        setError('Failed to load menu')
-      }
-    }
-    fetchMenu()
 
-    socket.on('orderUpdated', () => {
-      console.log("orderUpdated received!")
-      getMyorders()
-    })
+  React.useEffect(() => {
+    fetchMenu()
+    fetchAvailableTables()
+    getMyorders()  // ✅ load active orders on page load
+
+    socket.on('orderUpdated', () => getMyorders())
     socket.on('courseReady', (data) => {
-      console.log("courseReady received!", data)
       setNotifications(prev => [...prev, `Table ${data.tableNumber} — ${data.course}s are ready! 🍽️`])
     })
-
+    socket.on('orderClosed', () => {
+      getMyorders()           // ✅ refresh orders when closed
+      fetchAvailableTables()  // ✅ refresh tables when closed
+    })
     return () => {
       socket.off('orderUpdated')
       socket.off('courseReady')
+      socket.off('orderClosed')
     }
   }, [])
+
+  async function fetchMenu() {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.get('http://localhost:5000/api/menu', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setMenuItems(response.data.items)
+    } catch { setError('Failed to load menu') }
+  }
+
+  async function fetchAvailableTables() {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.get('http://localhost:5000/api/table', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const available = response.data.t.filter(t => t.Status === 'available')
+      setAvailableTables(available)
+    } catch { setError('Failed to load tables') }
+  }
+
+  async function getMyorders() {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.get('http://localhost:5000/api/orders/active', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setTableOrder(response.data.orders)
+    } catch {
+      setError('Failed to fetch orders')
+    }
+  }
+
+  React.useEffect(() => {
+    if (!searchQuery) { setSearchResults([]); return }
+    const filtered = menuItems.filter(item =>
+      item.course === selectedCourse &&
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    setSearchResults(filtered)
+  }, [searchQuery, selectedCourse, menuItems])
+
+  function handleAddItem(item) {
+    if (orderItems.find(i => i._id === item._id)) { setError('Item already added!'); return }
+    setOrderItems(prev => [...prev, { ...item, quantity: 1 }])
+    setSearchQuery('')
+    setSearchResults([])
+    setError('')
+  }
+
+  function handleIncreaseQuantity(id) {
+    setOrderItems(prev => prev.map(i => i._id === id ? { ...i, quantity: i.quantity + 1 } : i))
+  }
+
+  function handleDecreaseQuantity(id) {
+    setOrderItems(prev => prev.map(i => i._id === id ? i.quantity === 1 ? i : { ...i, quantity: i.quantity - 1 } : i))
+  }
+
+  function handleRemoveItem(id) {
+    setOrderItems(prev => prev.filter(item => item._id !== id))
+  }
+
+  async function handleSendOrder() {
+    console.log("role:", localStorage.getItem('role'))
+    console.log("token:", localStorage.getItem('token'))
+    if (!tableNumber) { setError('Please select a table'); return }
+    if (orderItems.length === 0) { setError('Please add at least one item!'); return }
+    try {
+      const token = localStorage.getItem('token')
+      await axios.post('http://localhost:5000/api/orders', {
+        tableNumber: Number(tableNumber),
+        items: orderItems.map(item => ({
+          menuItem: item._id,
+          quantity: item.quantity || 1,
+          status: 'pending'
+        }))
+      }, { headers: { Authorization: `Bearer ${token}` } })
+      setSuccess('Order sent to kitchen!')
+      setActiveTable(tableNumber)
+      activeTableRef.current = String(tableNumber)
+      localStorage.setItem('activeTable', String(tableNumber))
+      setOrderItems([])
+      setTableNumber('')
+      setError('')
+      fetchAvailableTables()
+      getMyorders()
+      setTimeout(() => setSuccess(''), 3000)
+    } catch { setError('Failed to send order') }
+  }
+
+  async function handleCloseOrder(orderId) {
+    try {
+      const token = localStorage.getItem('token')
+      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`,
+        { status: 'closed' },
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      getMyorders()
+      fetchAvailableTables()
+    } catch (error) {
+      setError(error.response?.data?.message || 'Unable to close order — make sure all items are done first')
+    }
+  }
 
   async function handleAskAI() {
     if (!aiQuestion) return
@@ -62,353 +154,247 @@ export default function WaiterPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       setAiAnswer(response.data.answer)
-    } catch {
-      setError('AI request failed')
-    } finally {
-      setAiLoading(false)
-    }
+    } catch { setError('AI request failed') }
+    finally { setAiLoading(false) }
   }
 
-  React.useEffect(() => {
-    async function fetchAvailableTables() {
-      try {
-        const token = localStorage.getItem('token')
-        const response = await axios.get('http://localhost:5000/api/table', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const available = response.data.t.filter(t => t.Status === 'available')
-        setAvailableTables(available)
-      } catch {
-        setError('Failed to load tables')
-      }
-    }
-    fetchAvailableTables()
-  }, [])
-  // hint 2 — filter menu when search or course changes
-  // useEffect goes here
-  React.useEffect(() => {
-    if (!searchQuery) {
-      setSearchResults([])
-      return
-    }
-    const filtered = menuItems.filter(item => item.course === selectedCourse && item.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    setSearchResults(filtered)
-  }, [searchQuery, selectedCourse, menuItems])
-
-  // hint 3 — add item to order
-  function handleAddItem(item) {
-    const alreadyAdded = orderItems.find(i => i._id === item._id)
-    if (alreadyAdded) {
-      setError('Item already added!')
-      return
-    }
-    setOrderItems(
-      prev => [
-        ...prev, { ...item, quantity: 1 }]
-
-    )
-    setSearchQuery('')
-    setSearchResults([])
-  }
-  function handleIncreaseQuantity(id) {
-
-
-    setOrderItems(
-      prev => prev.map(i => i._id === id ? { ...i, quantity: i.quantity + 1 } : i)
-    )
-
-  }
-  function handleDecreaseQuantity(id) {
-    setOrderItems(
-      prev => prev.map(i => i._id === id ? i.quantity === 1 ? i : { ...i, quantity: i.quantity - 1 } : i)
-    )
-  }
-
-  // hint 4 — remove item from order
-  function handleRemoveItem(id) {
-    setOrderItems(prev => prev.filter(item => item._id !== id))
-  }
-
-  async function getMyorders() {
-    console.log("activeTableRef:", activeTableRef.current)
-    console.log("tableNumber:", tableNumber)
-
-    try {
-      const tableToFetch = activeTableRef.current || localStorage.getItem('activeTable') || tableNumber
-      console.log("tableToFetch:", tableToFetch)
-      if (!tableToFetch) return
-      const token = localStorage.getItem('token')
-      const response = await axios.get(
-        `http://localhost:5000/api/orders/table/${tableToFetch}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
-      setTableOrder(response.data.orders)
-    } catch (err) {
-      setError('Failed to fetch orders')
-    }
-  }
-
-  // hint 5 — send order to kitchen
-  async function handleSendOrder() {
-    if (!tableNumber) {
-      setError('Please enter a table number')
-      return
-    }
-    if (orderItems.length === 0) {
-      setError('Please add at least one item! ')
-      return
-    }
-    try {
-      const token = localStorage.getItem('token')
-      const response = await axios.post('http://localhost:5000/api/orders', {
-        tableNumber: Number(tableNumber),
-        items: orderItems.map(item => ({
-          menuItem: item._id,
-          quantity: item.quantity || 1,
-          status: 'pending'
-        }))
-      }, { headers: { Authorization: `Bearer ${token}` } })
-      setSuccess('Order sent to kitchen!')
-      setActiveTable(tableNumber)
-      activeTableRef.current = tableNumber
-      localStorage.setItem('activeTable', tableNumber)
-      setOrderItems([])
-      setTableNumber('')
-      setError('')
-    } catch (err) {
-      setError('Failed to send order')
-    }
-
-
-
-
-  }
-  async function handleCloseOrder(orderId) {
-    try {
-      const token = localStorage.getItem('token')
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`,
-        { status: 'done' },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      )
-      getMyorders()
-
-    } catch (error) {
-      setError(error.response?.data?.message || "Unable to close order")
-    }
-  }
-
-  // split orderItems into 3 groups
   const starters = orderItems.filter(i => i.course === 'Starter')
   const mains = orderItems.filter(i => i.course === 'Main')
   const desserts = orderItems.filter(i => i.course === 'Dessert')
 
   return (
-    <div>
+    <div className="min-h-screen bg-dark flex flex-col">
 
-      {/* header + table number input */}
-      <header>
-        <h1>TableServe — Waiter</h1>
-        <select
-          value={tableNumber}
-          onChange={(e) => setTableNumber(e.target.value)}
-        >
-          <option value="">Select a table</option>
-          {availableTables.map(table => (
-            <option key={table._id} value={table.TableNumber}>
-              Table {table.TableNumber}
-            </option>
-          ))}
-        </select>
-        <button onClick={getMyorders}>
-          Get Active Orders
-        </button>
-      </header>
-
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
-
-      {notifications.map((note, index) => (
-        <div key={index} style={{ backgroundColor: 'green', color: 'white', padding: '10px', marginBottom: '5px' }}>
-          {note}
-          <button onClick={() => setNotifications(prev => prev.filter((_, i) => i !== index))}>✕</button>
+      {/* Topbar */}
+      <div className="bg-card border-b border-white border-opacity-10 px-6 py-3 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <span className="text-primary font-medium text-lg">Table<span className="text-white">Serve</span></span>
+          <div className="w-px h-6 bg-white bg-opacity-10"></div>
+          <span className="text-white text-opacity-60 text-sm">Waiter Dashboard</span>
         </div>
-      ))}
-      {/* radio buttons — starter / main / dessert */}
-      <div>
-        <label>
-          <input
-            type="radio"
-            value="starter"
-            checked={selectedCourse === 'Starter'}
-            onChange={() => setSelectedCourse('Starter')}
-          />
-          Starter
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="main"
-            checked={selectedCourse === 'Main'}
-            onChange={() => setSelectedCourse('Main')}
-          />
-          Main Course
-        </label>
-        <label>
-          <input
-            type="radio"
-            value="dessert"
-            checked={selectedCourse === 'Dessert'}
-            onChange={() => setSelectedCourse('Dessert')}
-          />
-          Dessert
-        </label>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="text-white text-sm font-medium">Waiter</div>
+            <div className="text-white text-opacity-40 text-xs">Staff</div>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-white text-sm font-medium">W</div>
+        </div>
       </div>
 
-      {/* search bar */}
-      <div>
-        <input
-          type="text"
-          placeholder={`Search ${selectedCourse} dishes...`}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
+      {/* Alerts */}
+      <div className="px-6 pt-3 flex flex-col gap-2">
+        {notifications.map((note, index) => (
+          <div key={index} className="flex justify-between items-center bg-green-500 bg-opacity-10 border border-green-500 border-opacity-30 rounded-lg px-4 py-2">
+            <span className="text-green-400 text-sm">{note}</span>
+            <button onClick={() => setNotifications(prev => prev.filter((_, i) => i !== index))} className="text-green-400 text-lg">×</button>
+          </div>
+        ))}
+        {error && (
+          <div className="bg-red-500 bg-opacity-10 border border-red-500 border-opacity-30 rounded-lg px-4 py-2">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-500 bg-opacity-10 border border-green-500 border-opacity-30 rounded-lg px-4 py-2">
+            <p className="text-green-400 text-sm">{success}</p>
+          </div>
+        )}
+      </div>
 
-        {/* Search results dropdown */}
-        {searchResults.length > 0 && (
-          <div style={{ border: '1px solid gray' }}>
-            {searchResults.map(item => (
-              <div
-                key={item._id}
-                onClick={() => handleAddItem(item)}
-                style={{ cursor: 'pointer', padding: '8px' }}
+      {/* Body */}
+      <div className="flex-1 grid grid-cols-2 gap-4 p-6">
+
+        {/* Left — Order Builder */}
+        <div className="bg-card border border-white border-opacity-10 rounded-xl p-5 flex flex-col gap-4">
+          <h2 className="text-white font-medium">New Order</h2>
+
+          {/* Table Select */}
+          <select
+            value={tableNumber}
+            onChange={(e) => setTableNumber(e.target.value)}
+            style={{ backgroundColor: '#16213E', color: 'white' }}
+            className="w-full border border-white border-opacity-10 rounded-lg px-4 py-2.5 text-sm outline-none"
+          >
+            <option value="" style={{ backgroundColor: '#16213E', color: 'white' }}>Select a table</option>
+            {availableTables.map(table => (
+              <option
+                key={table._id}
+                value={table.TableNumber}
+                style={{ backgroundColor: '#16213E', color: 'white' }}
               >
-                <p>{item.name} — Rs. {item.price} </p>
+                Table {table.TableNumber}
+              </option>
+            ))}
+          </select>
+
+          {/* Course Tabs */}
+          <div className="flex gap-2">
+            {['Starter', 'Main', 'Dessert'].map(course => (
+              <button
+                key={course}
+                onClick={() => setSelectedCourse(course)}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${selectedCourse === course
+                  ? 'bg-primary text-white'
+                  : 'bg-white bg-opacity-5 text-white text-opacity-50 border border-white border-opacity-10'
+                  }`}
+              >
+                {course}
+              </button>
+            ))}
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder={`Search ${selectedCourse} dishes...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg px-4 py-2.5 text-white text-sm placeholder-white placeholder-opacity-25 outline-none"
+            />
+            {searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 bg-card border border-white border-opacity-10 rounded-lg mt-1 z-10 overflow-hidden">
+                {searchResults.map(item => (
+                  <div
+                    key={item._id}
+                    onClick={() => handleAddItem(item)}
+                    className="px-4 py-3 text-white text-sm cursor-pointer hover:bg-white hover:bg-opacity-5 flex justify-between"
+                  >
+                    <span>{item.name}</span>
+                    <span className="text-white text-opacity-40">Rs. {item.price}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Order Items */}
+          <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
+            {[
+              { title: 'Starters', items: starters },
+              { title: 'Main Course', items: mains },
+              { title: 'Desserts', items: desserts }
+            ].map(section => (
+              <div key={section.title}>
+                <h3 className="text-white text-opacity-40 text-xs uppercase tracking-wider mb-2">{section.title}</h3>
+                {section.items.length === 0
+                  ? <p className="text-white text-opacity-20 text-sm">No {section.title.toLowerCase()} added</p>
+                  : section.items.map(item => (
+                    <div key={item._id} className="flex justify-between items-center py-2 border-b border-white border-opacity-5">
+                      <div>
+                        <p className="text-white text-sm">{item.name}</p>
+                        <p className="text-white text-opacity-40 text-xs">Rs. {item.price}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleDecreaseQuantity(item._id)} className="w-6 h-6 rounded-full bg-white bg-opacity-10 text-white text-sm flex items-center justify-center">-</button>
+                        <span className="text-white text-sm w-4 text-center">{item.quantity}</span>
+                        <button onClick={() => handleIncreaseQuantity(item._id)} className="w-6 h-6 rounded-full bg-white bg-opacity-10 text-white text-sm flex items-center justify-center">+</button>
+                        <button onClick={() => handleRemoveItem(item._id)} className="text-red-400 text-xs ml-1">✕</button>
+                      </div>
+                    </div>
+                  ))
+                }
               </div>
             ))}
           </div>
-        )}
 
-        {/* No results message */}
-        {searchQuery && searchResults.length === 0 && (
-          <p>No {selectedCourse} dishes found</p>
-        )}
-      </div>
-
-      {/* search results appear below search bar */}
-
-      {/* order display — 3 sections */}
-      <div>
-        {/* section 1 — starters */}
-        <div>
-          <h3>Starters</h3>
-          {starters.length === 0
-            ? <p>No starters added</p>
-            : starters.map(item => (
-              <div key={item._id}>
-                <p>{item.name} — Rs. {item.price}</p>
-                <button onClick={() => handleDecreaseQuantity(item._id)}>-</button>
-                <span>{item.quantity}</span>
-                <button onClick={() => handleIncreaseQuantity(item._id)}>+</button>
-                <button onClick={() => handleRemoveItem(item._id)}>Remove</button>
-              </div>
-            ))
-          }
+          <button
+            onClick={handleSendOrder}
+            className="w-full bg-primary text-white rounded-lg py-3 font-medium text-sm hover:opacity-90"
+          >
+            Send to Kitchen
+          </button>
         </div>
-        {/* section 2 — mains */}
-        <div>
-          <h3>Main Course</h3>
-          {mains.length === 0
-            ? <p>No mains added</p>
-            : mains.map(item => (
-              <div key={item._id}>
-                <p>{item.name} — Rs. {item.price}</p>
-                <button onClick={() => handleDecreaseQuantity(item._id)}>-</button>
-                <span>{item.quantity}</span>
-                <button onClick={() => handleIncreaseQuantity(item._id)}>+</button>
-                <button onClick={() => handleRemoveItem(item._id)}>Remove</button>
-              </div>
-            ))
-          }
-        </div>
-        {/* section 3 — desserts */}
-        <div>
-          <h3>Desserts</h3>
-          {desserts.length === 0
-            ? <p>No desserts added</p>
-            : desserts.map(item => (
-              <div key={item._id}>
-                <p>{item.name} — Rs. {item.price}</p>
-                <button onClick={() => handleDecreaseQuantity(item._id)}>-</button>
-                <span>{item.quantity}</span>
-                <button onClick={() => handleIncreaseQuantity(item._id)}>+</button>
-                <button onClick={() => handleRemoveItem(item._id)}>Remove</button>
-              </div>
-            ))
-          }
-        </div>
-      </div>
 
-      {/* send to kitchen button */}
-      <button onClick={handleSendOrder}>Send to Kitchen</button>
-      <div>
-        <h2>Active Orders</h2>
+        {/* Right — Active Orders + AI */}
+        <div className="flex flex-col gap-4">
 
-        {tableOrder.length === 0 ? (
-          <p>No active orders</p>
-        ) : (
-          tableOrder.map(order => (
-
-            <div
-              key={order._id}
-              style={{
-                border: '1px solid gray',
-                padding: '10px',
-                marginBottom: '10px'
-              }}
-            >
-              {order.overallStatus === "ongoing" && <button onClick={() => handleCloseOrder(order._id)}>X</button>}
-              <p>
-                Order Status: {order.overallStatus}
-              </p>
-
-              {order.items.map(item => (
-                <div key={item._id}>
-                  <p>
-                    {item.menuItem?.name}
-                    {' - '}
-                    Qty: {item.quantity}
-                    {' - '}
-                    Status: {item.status}
-                  </p>
-                </div>
-              ))}
+          {/* Active Orders */}
+          <div className="bg-card border border-white border-opacity-10 rounded-xl p-5 flex-1">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-white font-medium">Active Orders</h2>
+              <button
+                onClick={getMyorders}
+                className="text-white text-opacity-40 text-xs border border-white border-opacity-10 px-3 py-1 rounded-lg hover:bg-white hover:bg-opacity-5"
+              >
+                Refresh
+              </button>
             </div>
-          ))
-        )}
-      </div>
-      <div>
-        <h2>🤖 AI Menu Assistant</h2>
-        <input
-          type="text"
-          placeholder="Ask about the menu..."
-          value={aiQuestion}
-          onChange={(e) => setAiQuestion(e.target.value)}
-        />
-        <button onClick={handleAskAI}>
-          {aiLoading ? 'Thinking...' : 'Ask'}
-        </button>
-        {aiAnswer && <p>{aiAnswer}</p>}
-      </div>
 
+            {tableOrder.length === 0
+              ? <p className="text-white text-opacity-30 text-sm">No active orders</p>
+              : tableOrder.map(order => (
+                <div
+                  key={order._id}
+                  className="bg-dark border border-white border-opacity-10 rounded-lg p-3 mb-3"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-white text-sm font-medium">Table {order.tableNumber}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs px-2.5 py-1 rounded-full ${order.overallStatus === 'done'
+                        ? 'bg-green-500 bg-opacity-20 text-green-400'
+                        : 'bg-primary bg-opacity-20 text-primary'
+                        }`}>
+                        {order.overallStatus}
+                      </span>
+                      {order.overallStatus === 'ongoing' && (
+                        <button
+                          onClick={() => handleCloseOrder(order._id)}
+                          className="bg-green-600 text-white text-xs px-2.5 py-1 rounded-md hover:bg-green-700"
+                        >
+                          Close
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {order.items.map(item => (
+                    <div key={item._id} className="flex justify-between text-xs py-1.5 border-b border-white border-opacity-5 last:border-0">
+                      <span className="text-white text-opacity-80">{item.menuItem?.name || 'Item deleted'}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-white text-opacity-40">x{item.quantity}</span>
+                        <span className={`${item.status === 'done' ? 'text-green-400' :
+                          item.status === 'preparing' ? 'text-blue-400' :
+                            'text-white text-opacity-30'
+                          }`}>
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))
+            }
+          </div>
+
+          {/* AI Assistant */}
+          <div className="bg-card border border-primary border-opacity-30 rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-primary">🤖</span>
+              <h3 className="text-white text-sm font-medium">AI Menu Assistant</h3>
+            </div>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                placeholder="Ask about menu, allergens..."
+                value={aiQuestion}
+                onChange={(e) => setAiQuestion(e.target.value)}
+                className="flex-1 bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg px-3 py-2 text-white text-sm placeholder-white placeholder-opacity-25 outline-none"
+              />
+              <button
+                onClick={handleAskAI}
+                className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:opacity-90"
+              >
+                {aiLoading ? '...' : 'Ask'}
+              </button>
+            </div>
+            {aiAnswer && (
+              <div className="bg-white bg-opacity-5 rounded-lg p-3">
+                <p className="text-white text-opacity-80 text-sm leading-relaxed">{aiAnswer}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
-
   )
 }

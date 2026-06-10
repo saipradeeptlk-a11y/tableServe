@@ -189,5 +189,16 @@ const updateItemQuantity = async (req, res) => {
 
 }
 
+const getActiveOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      overallStatus: { $in: ['ongoing', 'done'] }
+    }).populate('items.menuItem')
+    return res.status(200).json({ orders })
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 
-module.exports = { createOrder, getOngoingOrders, updateOrderStatus, getOrdersByTableNumber, updateItemStatus, updateItemQuantity, getAllOrders } 
+
+module.exports = { createOrder, getOngoingOrders, updateOrderStatus, getOrdersByTableNumber, updateItemStatus, updateItemQuantity, getAllOrders, getActiveOrders } 

@@ -10,6 +10,7 @@ const menuRoutes = require('./routes/menu')
 const orderRoutes = require('./routes/order')
 const tableRoutues = require('./routes/Table')
 const aiRoutes = require('./routes/ai')
+const setupRoutes = require('./routes/setup')
 
 const http = require('http')
 
@@ -47,6 +48,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/table', tableRoutues);
 app.use('/api/ai', aiRoutes)
+app.use('/api/setup', setupRoutes)
 
 
 
