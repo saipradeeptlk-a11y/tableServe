@@ -1,117 +1,137 @@
- TableServe 🍽️
+# 🍽️ TableServe — AI-Powered Restaurant Order Management System
 
-An AI-powered restaurant order management system that streamlines communication between waiters and kitchen staff in real time.
+A full-stack restaurant management system with real-time order tracking, role-based access, and an AI-powered menu assistant.
 
-## Features
+**🔗 Live Demo:** [https://snazzy-lamington-70183a.netlify.app](https://snazzy-lamington-70183a.netlify.app)
 
-- 🔐 JWT Authentication with role-based access (Waiter / Kitchen / Admin)
-- 📋 Waiter can create orders, track active orders by table
-- 👨‍🍳 Kitchen dashboard with live order updates
-- ✅ Item-level status tracking (pending → preparing → done)
-- 🤖 AI Menu Assistant powered by Gemini AI *(in progress)*
-- ⚡ Real-time updates with Socket.io *(in progress)*
-- 📊 Admin panel for menu and staff management *(in progress)*
+---
 
-## Tech Stack
+## 🚀 Features
 
-**Frontend:** React, Axios, React Router
+- **Role-based access** — Admin, Waiter, and Kitchen staff roles
+- **Real-time updates** — Socket.io powered live order notifications
+- **AI Menu Assistant** — Groq AI chatbot to help customers with menu queries
+- **Order Management** — Full order lifecycle from placement to completion
+- **Table Management** — Track table status and assignments
+- **Staff Management** — Admin can create and manage staff accounts
 
-**Backend:** Node.js, Express.js
+---
 
-**Database:** MongoDB Atlas, Mongoose
+## 🧪 Test Credentials
 
-**Auth:** JWT, bcrypt
+| Role  | Email             | Password    |
+|-------|-------------------|-------------|
+| Admin | admin@gmail.com   | Admin@1234  |
 
-**Real-time:** Socket.io *(in progress)*
+> Staff accounts can be created via the Admin panel → Staff tab.
 
-**AI:** Google Gemini API *(in progress)*
+---
 
-## Project Structure
+## 📸 Pages Overview
 
-```
-TableServeApp/
-├── client/          # React frontend
-│   └── src/
-│       ├── pages/   # Login, Waiter, Kitchen, Admin
-│       └── components/
-└── server/          # Node.js backend
-    ├── controllers/
-    ├── models/
-    ├── routes/
-    └── middleware/
-```
+### 🔐 Login Page
+- All users log in from a single login page
+- Role-based routing redirects to the correct dashboard after login
 
-## Getting Started
+### 👨‍🍳 Waiter Page
+- View and filter menu by category
+- Search menu items
+- Select a table and build an order
+- Submit orders to the kitchen in real-time
+- AI assistant to answer menu-related questions
+
+### 🍳 Kitchen Page
+- View all incoming orders in real-time
+- Mark individual items as completed
+- Orders update live via Socket.io
+
+### ⚙️ Admin Page
+- **Orders tab** — View all orders across all tables
+- **Menu tab** — Add, edit, and delete menu items
+- **Staff tab** — Create and manage waiter/kitchen accounts
+- **Tables tab** — Add tables and manage table status
+
+### 🛠️ Setup Page (`/setup`)
+- First-time setup to create the initial admin account
+- Only works if no admin exists in the database
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer     | Technology                        |
+|-----------|-----------------------------------|
+| Frontend  | React.js, Tailwind CSS, Axios     |
+| Backend   | Node.js, Express.js               |
+| Database  | MongoDB Atlas                     |
+| Realtime  | Socket.io                         |
+| AI        | Groq AI API                       |
+| Auth      | JWT + bcryptjs                    |
+
+---
+
+## 🏃 Run Locally
 
 ### Prerequisites
 - Node.js
 - MongoDB Atlas account
+- Groq API key
 
-### Installation
-
-1. Clone the repo
+### 1. Clone the repo
 ```bash
 git clone https://github.com/saipradeeptlk-a11y/tableServe.git
+cd tableServe
 ```
 
-2. Install backend dependencies
+### 2. Setup Backend
 ```bash
 cd server
 npm install
 ```
 
-3. Install frontend dependencies
-```bash
-cd client
-npm install
+Create a `.env` file in the `server` folder:
 ```
-
-4. Create `.env` in server folder
-```
-PORT=5000
-MONGO_URI=your_mongodb_uri
+MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-GEMINI_API_KEY=your_gemini_key
+GROQ_API_KEY=your_groq_api_key
+PORT=5000
 ```
 
-5. Run backend
+Start the server:
 ```bash
-cd server
-nodemon index.js
+npm run dev
 ```
 
-6. Run frontend
+### 3. Setup Frontend
 ```bash
 cd client
+npm install
 npm start
 ```
 
-## API Endpoints
+### 4. First Time Setup
+Visit `http://localhost:3000/setup` to create your admin account.
 
-| Method | Endpoint | Role | Description |
-|--------|----------|------|-------------|
-| POST | /api/auth/register | - | Register user |
-| POST | /api/auth/login | - | Login |
-| GET | /api/menu | All | Get menu items |
-| POST | /api/menu | Admin | Add menu item |
-| PUT | /api/menu/:id | Admin | Update menu item |
-| DELETE | /api/menu/:id | Admin | Delete menu item |
-| POST | /api/orders | Waiter | Create order |
-| GET | /api/orders | Kitchen | Get all orders |
-| PUT | /api/orders/:id/status | Kitchen | Update order status |
-| GET | /api/orders/table/:tableNumber | Waiter | Get orders by table |
-| PUT | /api/orders/:orderId/items/:itemId/status | Kitchen | Update item status |
-| PUT | /api/orders/:orderId/items/:itemId/quantity | Waiter | Update item quantity |
+---
 
-## Status
+## 📁 Project Structure
 
-🚧 In Progress — Core system complete, real-time and AI features coming soon
-
-## Author
-
-Built by Sai Pradeep Thiagarajan(https://github.com/saipradeeptlk-a11y)
+```
+tableServe/
+├── client/                 # React frontend
+│   ├── src/
+│   │   ├── pages/          # Login, WaiterPage, KitchenPage, AdminPage
+│   │   ├── components/     # Admin sub-components
+│   │   └── socket.js       # Socket.io client config
+└── server/                 # Node.js backend
+    ├── controllers/        # Route logic
+    ├── models/             # Mongoose schemas
+    ├── routes/             # Express routes
+    └── index.js            # Entry point
 ```
 
-git commit -m "add README"
-git push
-```
+---
+
+## 👨‍💻 Author
+
+**Sai Pradeep** — [GitHub](https://github.com/saipradeeptlk-a11y)
