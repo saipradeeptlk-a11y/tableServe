@@ -14,7 +14,7 @@ export default function SetupPage() {
     React.useEffect(() => {
         async function checkSetup() {
             try {
-                const response = await axios.get('http://localhost:5000/api/setup/check')
+                const response = await axios.get('https://tableserve-u7mk.onrender.com/api/setup/check')
                 if (response.data.setupComplete) {
                     navigate('/')
                 }
@@ -30,7 +30,7 @@ export default function SetupPage() {
         }
         try {
             setLoading(true)
-            await axios.post('http://localhost:5000/api/setup', { name, email, password })
+            await axios.post('https://tableserve-u7mk.onrender.com/api/setup', { name, email, password })
             setSuccess('Admin account created! Redirecting to login...')
             setTimeout(() => navigate('/'), 2000)
         } catch (err) {

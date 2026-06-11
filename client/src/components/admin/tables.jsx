@@ -11,7 +11,7 @@ export default function Tables() {
     async function fetchTables() {
         try {
             const token = localStorage.getItem('token')
-            const response = await axios.get('http://localhost:5000/api/table', {
+            const response = await axios.get('https://tableserve-u7mk.onrender.com/api/table', {
                 headers: { Authorization: `Bearer ${token}` }
             })
             setTables(response.data.t)
@@ -23,7 +23,7 @@ export default function Tables() {
     async function handleAddTable() {
         try {
             const token = localStorage.getItem('token')
-            await axios.post('http://localhost:5000/api/table',
+            await axios.post('https://tableserve-u7mk.onrender.com/api/table',
                 { TableNumber: tableNumber, Status: status },
                 { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -36,7 +36,7 @@ export default function Tables() {
     async function handleUpdateStatus(id, newStatus) {
         try {
             const token = localStorage.getItem('token')
-            await axios.put(`http://localhost:5000/api/table/${id}`,
+            await axios.put(`https://tableserve-u7mk.onrender.com/api/table/${id}`,
                 { Status: newStatus },
                 { headers: { Authorization: `Bearer ${token}` } }
             )

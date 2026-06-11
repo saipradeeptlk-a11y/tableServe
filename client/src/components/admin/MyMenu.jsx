@@ -14,7 +14,7 @@ export default function MyMenu() {
     async function fetchMenu() {
         try {
             const token = localStorage.getItem('token')
-            const menu = await axios.get('http://localhost:5000/api/menu', {
+            const menu = await axios.get('https://tableserve-u7mk.onrender.com/api/menu', {
                 headers: { Authorization: `Bearer ${token}` }
             })
             setMenuItems(menu.data.items)
@@ -26,7 +26,7 @@ export default function MyMenu() {
     async function handleAddItem() {
         try {
             const token = localStorage.getItem('token')
-            await axios.post('http://localhost:5000/api/menu',
+            await axios.post('https://tableserve-u7mk.onrender.com/api/menu',
                 { name, price, course, ingredients, allergens },
                 { headers: { Authorization: `Bearer ${token}` } }
             )
@@ -39,7 +39,7 @@ export default function MyMenu() {
     async function handleDeleteItem(id) {
         try {
             const token = localStorage.getItem('token')
-            await axios.delete(`http://localhost:5000/api/menu/${id}`, {
+            await axios.delete(`https://tableserve-u7mk.onrender.com/api/menu/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
             fetchMenu()

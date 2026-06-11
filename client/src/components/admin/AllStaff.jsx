@@ -16,7 +16,7 @@ export default function AllStaff() {
   async function fetchAllStaff() {
     try {
       const token = localStorage.getItem('token')
-      const users = await axios.get('http://localhost:5000/api/auth', {
+      const users = await axios.get('https://tableserve-u7mk.onrender.com/api/auth', {
         headers: { Authorization: `Bearer ${token}` }
       })
       setStaff(users.data.staff)
@@ -34,7 +34,7 @@ export default function AllStaff() {
   async function handleUserRegister() {
     try {
       const token = localStorage.getItem('token')
-      await axios.post('http://localhost:5000/api/auth/register',
+      await axios.post('https://tableserve-u7mk.onrender.com/api/auth/register',
         { name, email, password, role },
         { headers: { Authorization: `Bearer ${token}` } }
       )

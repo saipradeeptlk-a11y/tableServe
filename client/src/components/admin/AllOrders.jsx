@@ -14,7 +14,7 @@ export default function AllOrders() {
     async function fetchAllOrder() {
         try {
             const token = localStorage.getItem('token')
-            const response = await axios.get('http://localhost:5000/api/orders/all', {
+            const response = await axios.get('https://tableserve-u7mk.onrender.com/api/orders/all', {
                 headers: { Authorization: `Bearer ${token}` }
             })
             setOrder(response.data.orders)
@@ -79,8 +79,8 @@ export default function AllOrders() {
                                     <p className="text-white text-opacity-30 text-xs mt-0.5">{new Date(order.createdAt).toLocaleString()}</p>
                                 </div>
                                 <span className={`text-xs px-2.5 py-1 rounded-full ${order.overallStatus === 'done'
-                                        ? 'bg-green-500 bg-opacity-20 text-green-400'
-                                        : 'bg-primary bg-opacity-20 text-primary'
+                                    ? 'bg-green-500 bg-opacity-20 text-green-400'
+                                    : 'bg-primary bg-opacity-20 text-primary'
                                     }`}>
                                     {order.overallStatus}
                                 </span>
@@ -91,8 +91,8 @@ export default function AllOrders() {
                                     <div className="flex items-center gap-3">
                                         <span className="text-white text-opacity-30 text-xs">x{item.quantity}</span>
                                         <span className={`text-xs ${item.status === 'done' ? 'text-green-400' :
-                                                item.status === 'preparing' ? 'text-blue-400' :
-                                                    'text-white text-opacity-30'
+                                            item.status === 'preparing' ? 'text-blue-400' :
+                                                'text-white text-opacity-30'
                                             }`}>{item.status}</span>
                                     </div>
                                 </div>

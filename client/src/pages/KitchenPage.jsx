@@ -21,7 +21,7 @@ export default function KitchenPage() {
     async function fetchOrders() {
         try {
             const token = localStorage.getItem('token')
-            const orders = await axios.get('http://localhost:5000/api/orders/', {
+            const orders = await axios.get('https://tableserve-u7mk.onrender.com/api/orders/', {
                 headers: { Authorization: `Bearer ${token}` }
             })
             setOrderList(orders.data.orders)
@@ -34,7 +34,7 @@ export default function KitchenPage() {
         try {
             const token = localStorage.getItem('token')
             await axios.put(
-                `http://localhost:5000/api/orders/${props.orderId}/items/${props.itemId}/status`,
+                `https://tableserve-u7mk.onrender.com/api/orders/${props.orderId}/items/${props.itemId}/status`,
                 { status: props.status },
                 { headers: { Authorization: `Bearer ${token}` } }
             )

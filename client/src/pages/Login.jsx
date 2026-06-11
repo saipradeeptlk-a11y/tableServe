@@ -11,7 +11,7 @@ export default function Login() {
     React.useEffect(() => {
         async function checkSetup() {
             try {
-                const response = await axios.get('http://localhost:5000/api/setup/check')
+                const response = await axios.get('https://tableserve-u7mk.onrender.com/api/setup/check')
                 if (!response.data.setupComplete) navigate('/setup')
             } catch { }
         }
@@ -21,7 +21,7 @@ export default function Login() {
     async function handleLogin() {
         if (!email || !password) { setError('Please fill in all fields'); return }
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', { email, password })
+            const response = await axios.post('https://tableserve-u7mk.onrender.com/api/auth/login', { email, password })
             localStorage.setItem('token', response.data.token)
             localStorage.setItem('role', response.data.role)
             if (response.data.role === 'waiter') navigate('/waiter')

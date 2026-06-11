@@ -44,7 +44,7 @@ export default function WaiterPage() {
   async function fetchMenu() {
     try {
       const token = localStorage.getItem('token')
-      const response = await axios.get('http://localhost:5000/api/menu', {
+      const response = await axios.get('https://tableserve-u7mk.onrender.com/api/menu', {
         headers: { Authorization: `Bearer ${token}` }
       })
       setMenuItems(response.data.items)
@@ -54,7 +54,7 @@ export default function WaiterPage() {
   async function fetchAvailableTables() {
     try {
       const token = localStorage.getItem('token')
-      const response = await axios.get('http://localhost:5000/api/table', {
+      const response = await axios.get('https://tableserve-u7mk.onrender.com/api/table', {
         headers: { Authorization: `Bearer ${token}` }
       })
       const available = response.data.t.filter(t => t.Status === 'available')
@@ -65,7 +65,7 @@ export default function WaiterPage() {
   async function getMyorders() {
     try {
       const token = localStorage.getItem('token')
-      const response = await axios.get('http://localhost:5000/api/orders/active', {
+      const response = await axios.get('https://tableserve-u7mk.onrender.com/api/orders/active', {
         headers: { Authorization: `Bearer ${token}` }
       })
       setTableOrder(response.data.orders)
@@ -106,7 +106,7 @@ export default function WaiterPage() {
     if (orderItems.length === 0) { setError('Please add at least one item!'); return }
     try {
       const token = localStorage.getItem('token')
-      await axios.post('http://localhost:5000/api/orders', {
+      await axios.post('https://tableserve-u7mk.onrender.com/api/orders', {
         tableNumber: Number(tableNumber),
         items: orderItems.map(item => ({
           menuItem: item._id,
@@ -131,7 +131,7 @@ export default function WaiterPage() {
   async function handleCloseOrder(orderId) {
     try {
       const token = localStorage.getItem('token')
-      await axios.put(`http://localhost:5000/api/orders/${orderId}/status`,
+      await axios.put(`https://tableserve-u7mk.onrender.com/api/orders/${orderId}/status`,
         { status: 'closed' },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -147,7 +147,7 @@ export default function WaiterPage() {
     try {
       setAiLoading(true)
       const token = localStorage.getItem('token')
-      const response = await axios.post('http://localhost:5000/api/ai/ask',
+      const response = await axios.post('https://tableserve-u7mk.onrender.com/api/ai/ask',
         { question: aiQuestion },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -186,8 +186,8 @@ export default function WaiterPage() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-3 text-sm font-medium transition-all ${activeTab === tab
-                ? 'text-primary border-b-2 border-primary'
-                : 'text-white text-opacity-40'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-white text-opacity-40'
               }`}
           >
             {tab === 'order' ? '🍽️ New Order' : tab === 'orders' ? '📋 Active' : '🤖 AI'}
@@ -237,8 +237,8 @@ export default function WaiterPage() {
                   key={course}
                   onClick={() => setSelectedCourse(course)}
                   className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${selectedCourse === course
-                      ? 'bg-primary text-white'
-                      : 'bg-white bg-opacity-5 text-white text-opacity-50 border border-white border-opacity-10'
+                    ? 'bg-primary text-white'
+                    : 'bg-white bg-opacity-5 text-white text-opacity-50 border border-white border-opacity-10'
                     }`}
                 >
                   {course}
@@ -316,8 +316,8 @@ export default function WaiterPage() {
                       <span className="text-white text-sm font-medium">Table {order.tableNumber}</span>
                       <div className="flex items-center gap-2">
                         <span className={`text-xs px-2.5 py-1 rounded-full ${order.overallStatus === 'done'
-                            ? 'bg-green-500 bg-opacity-20 text-green-400'
-                            : 'bg-primary bg-opacity-20 text-primary'
+                          ? 'bg-green-500 bg-opacity-20 text-green-400'
+                          : 'bg-primary bg-opacity-20 text-primary'
                           }`}>
                           {order.overallStatus}
                         </span>
@@ -334,8 +334,8 @@ export default function WaiterPage() {
                         <div className="flex items-center gap-3">
                           <span className="text-white text-opacity-40">x{item.quantity}</span>
                           <span className={`${item.status === 'done' ? 'text-green-400' :
-                              item.status === 'preparing' ? 'text-blue-400' :
-                                'text-white text-opacity-30'
+                            item.status === 'preparing' ? 'text-blue-400' :
+                              'text-white text-opacity-30'
                             }`}>{item.status}</span>
                         </div>
                       </div>
