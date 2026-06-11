@@ -12,9 +12,7 @@ export default function Login() {
         async function checkSetup() {
             try {
                 const response = await axios.get('http://localhost:5000/api/setup/check')
-                if (!response.data.setupComplete) {
-                    navigate('/setup')  // ✅ auto redirect if no admin
-                }
+                if (!response.data.setupComplete) navigate('/setup')
             } catch { }
         }
         checkSetup()
@@ -35,40 +33,31 @@ export default function Login() {
     }
 
     return (
-        <div className="min-h-screen bg-dark flex items-center justify-center relative overflow-hidden">
+        <div className="min-h-screen bg-dark flex items-center justify-center relative overflow-hidden px-4">
 
-            {/* Radial glows */}
+            {/* Background */}
             <div className="absolute w-64 h-64 rounded-full -top-20 -right-16" style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.15), transparent)' }}></div>
             <div className="absolute w-48 h-48 rounded-full top-10 -left-16" style={{ background: 'radial-gradient(circle, rgba(249,115,22,0.1), transparent)' }}></div>
-
-            {/* Bottom glow */}
             <div className="absolute bottom-0 left-0 right-0 h-32" style={{ background: 'linear-gradient(to top, rgba(249,115,22,0.08), transparent)' }}></div>
-
-            {/* Flames */}
             <div className="absolute bottom-0 left-14 w-28 h-44 rounded-t-full opacity-10" style={{ background: 'linear-gradient(to top, #F97316, #FCD34D, transparent)', transform: 'rotate(-15deg)' }}></div>
-            <div className="absolute bottom-0 left-24 w-20 h-36 rounded-t-full opacity-8" style={{ background: 'linear-gradient(to top, #F97316, #FCD34D, transparent)', transform: 'rotate(10deg)' }}></div>
             <div className="absolute bottom-0 left-44 w-24 h-40 rounded-t-full opacity-10" style={{ background: 'linear-gradient(to top, #EA580C, #F97316, transparent)', transform: 'rotate(5deg)' }}></div>
             <div className="absolute bottom-0 right-20 w-24 h-40 rounded-t-full opacity-10" style={{ background: 'linear-gradient(to top, #EA580C, #F97316, transparent)', transform: 'rotate(15deg)' }}></div>
-            <div className="absolute bottom-0 right-32 w-16 h-28 rounded-t-full opacity-8" style={{ background: 'linear-gradient(to top, #F97316, #FCD34D, transparent)', transform: 'rotate(-10deg)' }}></div>
 
-            {/* Card */}
-            <div className="relative z-10 w-96 rounded-2xl p-10" style={{ background: 'rgba(22,33,62,0.95)', border: '0.5px solid rgba(249,115,22,0.2)' }}>
+            {/* Card — w-full on mobile, w-96 on desktop */}
+            <div className="relative z-10 w-full max-w-md rounded-2xl p-8 sm:p-10" style={{ background: 'rgba(22,33,62,0.95)', border: '0.5px solid rgba(249,115,22,0.2)' }}>
 
-                {/* Logo */}
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center text-2xl mb-3">🍽️</div>
                     <h1 className="text-white text-2xl font-medium">TableServe</h1>
                     <p className="text-white text-opacity-40 text-sm mt-1">Restaurant Management System</p>
                 </div>
 
-                {/* Error */}
                 {error && (
                     <div className="bg-red-500 bg-opacity-10 border border-red-500 border-opacity-30 rounded-lg px-4 py-2 mb-4">
                         <p className="text-red-400 text-sm">{error}</p>
                     </div>
                 )}
 
-                {/* Email */}
                 <div className="mb-4">
                     <label className="text-white text-opacity-60 text-sm mb-2 block">Email address</label>
                     <input
@@ -80,7 +69,6 @@ export default function Login() {
                     />
                 </div>
 
-                {/* Password */}
                 <div className="mb-6">
                     <label className="text-white text-opacity-60 text-sm mb-2 block">Password</label>
                     <input
@@ -92,7 +80,6 @@ export default function Login() {
                     />
                 </div>
 
-                {/* Button */}
                 <button
                     onClick={handleLogin}
                     className="w-full bg-primary text-white rounded-lg py-3 font-medium text-sm hover:opacity-90 transition-opacity"
