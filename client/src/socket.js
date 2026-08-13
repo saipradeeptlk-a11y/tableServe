@@ -1,12 +1,11 @@
 import { io } from 'socket.io-client'
 
-const socket = io('http://localhost:5000', {
-  transports: ['websocket']  // ✅ add this
+const socket = io('https://tableserve-u7mk.onrender.com', {
+  transports: ['websocket']
 })
 
 socket.on('connect', () => {
   console.log('Socket connected:', socket.id)
 })
-
 
 export default socket
