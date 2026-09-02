@@ -42,11 +42,9 @@ const getAllTables = async (req, res) => {
         return res.status(200).json({
             t
         })
-    } catch {
-        return res.status(404).json({
-            message: err.message
-        })
-    }
+    } catch (err) {
+    return res.status(404).json({ message: err.message })
+}
 }
 
 module.exports = {
