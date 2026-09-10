@@ -201,4 +201,6 @@ const getActiveOrders = async (req, res) => {
 }
 
 
+
+
 module.exports = { createOrder, getOngoingOrders, updateOrderStatus, getOrdersByTableNumber, updateItemStatus, updateItemQuantity, getAllOrders, getActiveOrders } 
