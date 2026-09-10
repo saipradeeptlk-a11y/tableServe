@@ -112,7 +112,7 @@ export default function AllStaff() {
           <div>
             <label className="text-white text-opacity-50 text-xs mb-1.5 block">Role</label>
             <select onChange={(e) => setRole(e.target.value)}
-              className="w-full bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg px-3 py-2.5 text-white text-sm outline-none">
+              className="flex items-center gap-3 bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg p-3">
               <option value="waiter">Waiter</option>
               <option value="kitchen">Kitchen</option>
               <option value="admin">Admin</option>
