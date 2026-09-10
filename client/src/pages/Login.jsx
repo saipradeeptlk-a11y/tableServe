@@ -1,6 +1,7 @@
 import React from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
+import {UtensilsCrossed} from 'lucide-react'
 
 export default function Login() {
     const [email, setEmail] = React.useState('')
@@ -47,7 +48,7 @@ export default function Login() {
             <div className="relative z-10 w-full max-w-md rounded-2xl p-8 sm:p-10" style={{ background: 'rgba(22,33,62,0.95)', border: '0.5px solid rgba(249,115,22,0.2)' }}>
 
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center text-2xl mb-3">🍽️</div>
+                    <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center text-2xl mb-3"><UtensilsCrossed/></div>
                     <h1 className="text-white text-2xl font-medium">TableServe</h1>
                     <p className="text-white text-opacity-40 text-sm mt-1">Restaurant Management System</p>
                 </div>
@@ -87,7 +88,7 @@ export default function Login() {
                     Sign in
                 </button>
 
-                <p className="text-center text-white text-opacity-20 text-xs mt-6">TableServe v1.0 — Powered by AI</p>
+                <p className="text-center text-white text-opacity-20 text-xs mt-6">TableServe v1.0 </p>
             </div>
         </div>
     )
