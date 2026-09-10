@@ -3,6 +3,7 @@
     "axios": "^1.16.1",
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3",
+    "lucide-react": "^1.44.0",
     "react-router-dom": "^7.16.0",
     "validator": "^13.15.35"
   }

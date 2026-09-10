@@ -3,7 +3,7 @@ import AllOrders from "../components/admin/AllOrders"
 import AllStaff from "../components/admin/AllStaff"
 import MyMenu from "../components/admin/MyMenu"
 import Tables from "../components/admin/tables"
-
+import {Menu,UtensilsCrossed,PersonStanding,Table} from "lucide-react"
 export default function AdminPage() {
     const [activeTab, setActiveTab] = React.useState('orders')
 
@@ -16,11 +16,13 @@ export default function AdminPage() {
                     Table<span className="text-white">Serve</span>
                 </div>
                 {[
-                    { key: 'orders', label: 'Orders', icon: '📋' },
-                    { key: 'menu', label: 'Menu', icon: '🍽️' },
-                    { key: 'staff', label: 'Staff', icon: '👥' },
-                    { key: 'tables', label: 'Tables', icon: '🪑' },
-                ].map(tab => (
+                    { key: 'orders', label: 'Orders', icon: Menu },
+                    { key: 'menu', label: 'Menu', icon: UtensilsCrossed },
+                    { key: 'staff', label: 'Staff', icon: PersonStanding },
+                    { key: 'tables', label: 'Tables', icon: Table },
+                ].map(tab => {
+                    const Icon = tab.icon
+                    return(
                     <button
                         key={tab.key}
                         onClick={() => setActiveTab(tab.key)}
@@ -29,9 +31,10 @@ export default function AdminPage() {
                                 : 'text-white text-opacity-50 hover:bg-white hover:bg-opacity-5'
                             }`}
                     >
-                        <span>{tab.icon}</span> {tab.label}
+                        <Icon size={16} /> {tab.label}
                     </button>
-                ))}
+                    )
+})}
                 <div className="mt-auto pt-4 border-t border-white border-opacity-10 flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-primary bg-opacity-30 flex items-center justify-center text-primary text-xs font-medium">AD</div>
                     <div>
