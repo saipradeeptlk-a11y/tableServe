@@ -308,42 +308,46 @@ export default function WaiterPage() {
                 </button>
               </div>
 
+              
               {tableOrder.length === 0
-                ? <p className="text-white text-opacity-30 text-sm">No active orders</p>
-                : tableOrder.map(order => (
-                  <div key={order._id} className="bg-dark border border-white border-opacity-10 rounded-lg p-3 mb-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-white text-sm font-medium">Table {order.tableNumber}</span>
-                      <div className="flex items-center gap-2">
-                        <span className={`text-xs px-2.5 py-1 rounded-full ${order.overallStatus === 'done'
-                          ? 'bg-green-500 bg-opacity-20 text-green-400'
-                          : 'bg-primary bg-opacity-20 text-primary'
-                          }`}>
-                          {order.overallStatus}
-                        </span>
-                        {order.overallStatus === 'done' && (
-                          <button onClick={() => handleCloseOrder(order._id)} className="bg-green-600 text-white text-xs px-2.5 py-1 rounded-md">
-                            Close
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    {order.items.map(item => (
-                      <div key={item._id} className="flex justify-between text-xs py-1.5 border-b border-white border-opacity-5 last:border-0">
-                        <span className="text-white text-opacity-80">{item.menuItem?.name || 'Item deleted'}</span>
-                        <div className="flex items-center gap-3">
-                          <span className="text-white text-opacity-40">x{item.quantity}</span>
-                          <span className={`${item.status === 'done' ? 'text-green-400' :
-                            item.status === 'preparing' ? 'text-blue-400' :
-                              'text-white text-opacity-30'
-                            }`}>{item.status}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ))
-              }
+  ? <p className="text-white text-opacity-30 text-sm">No active orders</p>
+  : tableOrder.map(order => {
+      const allItemsDone = order.items.every(item => item.status === 'done')
+      return (
+        <div key={order._id} className="bg-dark border border-white border-opacity-10 rounded-lg p-3 mb-3">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-white text-sm font-medium">Table {order.tableNumber}</span>
+            <div className="flex items-center gap-2">
+              <span className={`text-xs px-2.5 py-1 rounded-full ${allItemsDone
+                ? 'bg-green-500 bg-opacity-20 text-green-400'
+                : 'bg-primary bg-opacity-20 text-primary'
+                }`}>
+                {allItemsDone ? 'done' : order.overallStatus}
+              </span>
+              {allItemsDone && (
+                <button onClick={() => handleCloseOrder(order._id)} className="bg-green-600 text-white text-xs px-2.5 py-1 rounded-md">
+                  Close
+                </button>
+              )}
             </div>
+          </div>
+          {order.items.map(item => (
+            <div key={item._id} className="flex justify-between text-xs py-1.5 border-b border-white border-opacity-5 last:border-0">
+              <span className="text-white text-opacity-80">{item.menuItem?.name || 'Item deleted'}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-white text-opacity-40">x{item.quantity}</span>
+                <span className={`${item.status === 'done' ? 'text-green-400' :
+                  item.status === 'preparing' ? 'text-blue-400' :
+                    'text-white text-opacity-30'
+                  }`}>{item.status}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    })
+}
+</div>
 
             {/* AI Assistant */}
             <div className={`bg-card border border-primary border-opacity-30 rounded-xl p-4 ${activeTab !== 'ai' ? 'hidden sm:block' : 'block'}`}>
