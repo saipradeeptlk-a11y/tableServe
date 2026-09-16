@@ -66,7 +66,7 @@ export default function AllStaff() {
         ? <p className="text-white text-opacity-30 text-sm">No {title.toLowerCase()} found</p>
         : <div className="grid grid-cols-2 gap-3">
           {members.map(member => (
-            <div key={member._id} className="flex items-center gap-3 bg-white bg-opacity-3 border border-white border-opacity-5 rounded-lg p-3">
+            <div key={member._id} className="flex items-center gap-3 bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg p-3">
               <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${avatarColor(member.role)}`}>
                 {member.name.charAt(0).toUpperCase()}
               </div>
@@ -96,26 +96,30 @@ export default function AllStaff() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-white text-opacity-50 text-xs mb-1.5 block">Full Name</label>
-            <input type="text" placeholder="e.g. John Doe" onChange={(e) => setName(e.target.value)}
+            <input type="text" placeholder="e.g. John Doe" value={name} onChange={(e) => setName(e.target.value)}
               className="w-full bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg px-3 py-2.5 text-white text-sm placeholder-white placeholder-opacity-25 outline-none" />
           </div>
           <div>
             <label className="text-white text-opacity-50 text-xs mb-1.5 block">Email</label>
-            <input type="email" placeholder="staff@restaurant.com" onChange={(e) => setEmail(e.target.value)}
+            <input type="email" placeholder="staff@restaurant.com" value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg px-3 py-2.5 text-white text-sm placeholder-white placeholder-opacity-25 outline-none" />
           </div>
           <div>
             <label className="text-white text-opacity-50 text-xs mb-1.5 block">Password</label>
-            <input type="password" placeholder="••••••••" onChange={(e) => setPassword(e.target.value)}
+            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg px-3 py-2.5 text-white text-sm placeholder-white placeholder-opacity-25 outline-none" />
           </div>
           <div>
             <label className="text-white text-opacity-50 text-xs mb-1.5 block">Role</label>
-            <select onChange={(e) => setRole(e.target.value)}
-              className="flex items-center gap-3 bg-white bg-opacity-5 border border-white border-opacity-10 rounded-lg p-3">
-              <option value="waiter">Waiter</option>
-              <option value="kitchen">Kitchen</option>
-              <option value="admin">Admin</option>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              style={{ backgroundColor: '#16213E', color: 'white' }}
+              className="w-full border border-white border-opacity-10 rounded-lg px-3 py-2.5 text-sm outline-none"
+            >
+              <option value="waiter" style={{ backgroundColor: '#16213E', color: 'white' }}>Waiter</option>
+              <option value="kitchen" style={{ backgroundColor: '#16213E', color: 'white' }}>Kitchen</option>
+              <option value="admin" style={{ backgroundColor: '#16213E', color: 'white' }}>Admin</option>
             </select>
           </div>
         </div>
